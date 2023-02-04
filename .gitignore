@@ -50,3 +50,10 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# ESP-IDF
+build/
+**/sdkconfig
+**/sdkconfig.old
+/.vscode/**
+__pycache__/
