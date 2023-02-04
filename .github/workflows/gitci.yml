@@ -11,8 +11,8 @@ jobs:
       with:
         submodules: 'recursive'
     - name: esp-idf build
-    - uses: espressif/esp-idf-ci-action@v1
-      working-directory: ./Mainboard_ESP32
+      run: cd /Mainboard_ESP32
+      uses: espressif/esp-idf-ci-action@v1
       with: 
         esp_idf_version: v5.0
         
