@@ -1,8 +1,8 @@
 #!/bin/bash
 
 FILES="\
-main/main.c
-components
+Mainboard_ESP32/main/main.c
+Mainboard_ESP32/components
 "
 
 OPTIONS="\
