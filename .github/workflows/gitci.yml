@@ -1,7 +1,7 @@
 on: push
 
 jobs:
-  build:
+  build_ESP32:
 
     runs-on: ubuntu-latest
 
@@ -11,6 +11,7 @@ jobs:
       with:
         submodules: 'recursive'
     - name: esp-idf build
+      working-directory: ./Mainboard_ESP32
       uses: espressif/esp-idf-ci-action@v1
       with: 
         esp_idf_version: v5.0
