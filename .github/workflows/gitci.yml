@@ -10,10 +10,9 @@ jobs:
       uses: actions/checkout@v2
       with:
         submodules: 'recursive'
-    - name: Change working directory
-      run: cd Mainboard_ESP32
     - name: esp-idf build
       uses: espressif/esp-idf-ci-action@v1
+      working-directory: ./Mainboard_ESP32
       with: 
         esp_idf_version: v5.0
         
