@@ -15,4 +15,4 @@ FILTERS="\
 -readability/casting
 "
 
-cpplint ${OPTIONS} --linelength=100 --filter=${FILTERS} ${FILES}
+cpplint ${OPTIONS} --linelength=80 --filter=${FILTERS} ${FILES}
