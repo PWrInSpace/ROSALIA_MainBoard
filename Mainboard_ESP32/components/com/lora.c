@@ -1,12 +1,13 @@
+// Copyright 2023 PWr in Space, Krzysztof Gliwiński
 #include "lora.h"
 
 static spi_device_handle_t __spi;
 
-static int __implicit;
-static long __frequency;
+static int16_t __implicit;
+static int32_t __frequency;
 
 
-void lora_write_reg(int reg, int val) {
+void lora_write_reg(int16_t reg, int16_t val) {
   uint8_t out[2] = {0x80 | reg, val};
   uint8_t in[2];
 
@@ -18,7 +19,7 @@ void lora_write_reg(int reg, int val) {
   gpio_set_level(CONFIG_CS_GPIO, 1);
 }
 
-int lora_read_reg(int reg) {
+int16_t lora_read_reg(int16_t reg) {
   uint8_t out[2] = {reg, 0xff};
   uint8_t in[2];
 
@@ -43,7 +44,7 @@ void lora_explicit_header_mode(void) {
   lora_write_reg(REG_MODEM_CONFIG_1, lora_read_reg(REG_MODEM_CONFIG_1) & 0xfe);
 }
 
-void lora_implicit_header_mode(int size) {
+void lora_implicit_header_mode(int16_t size) {
   __implicit = 1;
   lora_write_reg(REG_MODEM_CONFIG_1, lora_read_reg(REG_MODEM_CONFIG_1) | 0x01);
   lora_write_reg(REG_PAYLOAD_LENGTH, size);
@@ -61,7 +62,7 @@ void lora_receive(void) {
   lora_write_reg(REG_OP_MODE, MODE_LONG_RANGE_MODE | MODE_RX_CONTINUOUS);
 }
 
-void lora_set_tx_power(int level) {
+void lora_set_tx_power(int16_t level) {
   // RF9x module uses PA_BOOST pin
   if (level < 2)
     level = 2;
@@ -70,7 +71,7 @@ void lora_set_tx_power(int level) {
   lora_write_reg(REG_PA_CONFIG, PA_BOOST | (level - 2));
 }
 
-void lora_set_frequency(long frequency) {
+void lora_set_frequency(int32_t frequency) {
   __frequency = frequency;
 
   uint64_t frf = ((uint64_t)frequency << 19) / 32000000;
@@ -80,7 +81,7 @@ void lora_set_frequency(long frequency) {
   lora_write_reg(REG_FRF_LSB, (uint8_t)(frf >> 0));
 }
 
-void lora_set_spreading_factor(int sf) {
+void lora_set_spreading_factor(int16_t sf) {
   if (sf < 6)
     sf = 6;
   else if (sf > 12)
@@ -99,8 +100,8 @@ void lora_set_spreading_factor(int sf) {
       (lora_read_reg(REG_MODEM_CONFIG_2) & 0x0f) | ((sf << 4) & 0xf0));
 }
 
-void lora_set_bandwidth(long sbw) {
-  int bw;
+void lora_set_bandwidth(int32_t sbw) {
+  int16_t bw;
 
   if (sbw <= 7.8E3)
     bw = 0;
@@ -126,23 +127,23 @@ void lora_set_bandwidth(long sbw) {
                  (lora_read_reg(REG_MODEM_CONFIG_1) & 0x0f) | (bw << 4));
 }
 
-void lora_set_coding_rate(int denominator) {
+void lora_set_coding_rate(int16_t denominator) {
   if (denominator < 5)
     denominator = 5;
   else if (denominator > 8)
     denominator = 8;
 
-  int cr = denominator - 4;
+  int16_t cr = denominator - 4;
   lora_write_reg(REG_MODEM_CONFIG_1,
                  (lora_read_reg(REG_MODEM_CONFIG_1) & 0xf1) | (cr << 1));
 }
 
-void lora_set_preamble_length(long length) {
+void lora_set_preamble_length(int32_t length) {
   lora_write_reg(REG_PREAMBLE_MSB, (uint8_t)(length >> 8));
   lora_write_reg(REG_PREAMBLE_LSB, (uint8_t)(length >> 0));
 }
 
-void lora_set_sync_word(int sw) { lora_write_reg(REG_SYNC_WORD, sw); }
+void lora_set_sync_word(int16_t sw) { lora_write_reg(REG_SYNC_WORD, sw); }
 
 void lora_enable_crc(void) {
   lora_write_reg(REG_MODEM_CONFIG_2, lora_read_reg(REG_MODEM_CONFIG_2) | 0x04);
@@ -152,7 +153,7 @@ void lora_disable_crc(void) {
   lora_write_reg(REG_MODEM_CONFIG_2, lora_read_reg(REG_MODEM_CONFIG_2) & 0xfb);
 }
 
-int lora_init(void) {
+int16_t lora_init(void) {
   esp_err_t ret;
 
   /*
@@ -214,14 +215,14 @@ int lora_init(void) {
   return 1;
 }
 
-void lora_send_packet(uint8_t *buf, int size) {
+void lora_send_packet(uint8_t *buf, int16_t size) {
   /*
    * Transfer data to radio.
    */
   lora_idle();
   lora_write_reg(REG_FIFO_ADDR_PTR, 0);
 
-  for (int i = 0; i < size; i++) lora_write_reg(REG_FIFO, *buf++);
+  for (int16_t i = 0; i < size; i++) lora_write_reg(REG_FIFO, *buf++);
 
   lora_write_reg(REG_PAYLOAD_LENGTH, size);
 
@@ -234,13 +235,13 @@ void lora_send_packet(uint8_t *buf, int size) {
   lora_write_reg(REG_IRQ_FLAGS, IRQ_TX_DONE_MASK);
 }
 
-int lora_receive_packet(uint8_t *buf, int size) {
-  int len = 0;
+int16_t lora_receive_packet(uint8_t *buf, int16_t size) {
+  int16_t len = 0;
 
   /*
    * Check interrupts.
    */
-  int irq = lora_read_reg(REG_IRQ_FLAGS);
+  int16_t irq = lora_read_reg(REG_IRQ_FLAGS);
   lora_write_reg(REG_IRQ_FLAGS, irq);
   if ((irq & IRQ_RX_DONE_MASK) == 0) return 0;
   if (irq & IRQ_PAYLOAD_CRC_ERROR_MASK) return 0;
@@ -259,17 +260,17 @@ int lora_receive_packet(uint8_t *buf, int size) {
   lora_idle();
   lora_write_reg(REG_FIFO_ADDR_PTR, lora_read_reg(REG_FIFO_RX_CURRENT_ADDR));
   if (len > size) len = size;
-  for (int i = 0; i < len; i++) *buf++ = lora_read_reg(REG_FIFO);
+  for (int16_t i = 0; i < len; i++) *buf++ = lora_read_reg(REG_FIFO);
 
   return len;
 }
 
-int lora_received(void) {
+int16_t lora_received(void) {
   if (lora_read_reg(REG_IRQ_FLAGS) & IRQ_RX_DONE_MASK) return 1;
   return 0;
 }
 
-int lora_packet_rssi(void) {
+int16_t lora_packet_rssi(void) {
   return (lora_read_reg(REG_PKT_RSSI_VALUE) -
           (__frequency < 868E6 ? 164 : 157));
 }
@@ -280,7 +281,7 @@ float lora_packet_snr(void) {
 
 void lora_close(void) {
   lora_sleep();
-  // TODO
+  // TODO(GLIBUS): sprawdzic co to robi i zaimplementowac
   //   close(__spi);  FIXME: end hardware features after lora_close
   //   close(__cs);
   //   close(__rst);
@@ -290,7 +291,7 @@ void lora_close(void) {
 }
 
 void lora_dump_registers(void) {
-  int i;
+  int16_t i;
   printf("00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F\n");
   for (i = 0; i < 0x40; i++) {
     printf("%02X ", lora_read_reg(i));
