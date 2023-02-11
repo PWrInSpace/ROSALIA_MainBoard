@@ -9,6 +9,7 @@
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "rom/gpio.h"
 #include "soc/gpio_struct.h"
 
 /*
@@ -68,6 +69,15 @@
  * PA configuration
  */
 #define PA_BOOST 0x80
+
+typedef struct {
+  gpio_num_t cs;
+  gpio_num_t miso;
+  gpio_num_t mosi;
+  gpio_num_t sck;
+  gpio_num_t rst;
+  gpio_num_t intr;
+} lora_gpio_struct_t;
 
 /*!
  * \brief Write a value to a register.
