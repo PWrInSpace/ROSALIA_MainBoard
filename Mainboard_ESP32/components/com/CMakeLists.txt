@@ -1,4 +1,4 @@
 idf_component_register(SRCS "lora.c"
                     INCLUDE_DIRS "."
-                    REQUIRES cmock driver freertos soc uart)
+                    REQUIRES cmock driver freertos soc)
 
