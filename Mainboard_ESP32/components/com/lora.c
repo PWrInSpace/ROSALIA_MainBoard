@@ -7,11 +7,12 @@ static int16_t __implicit;
 static int32_t __frequency;
 
 // TODO(Glibus): change this to be initiated in function (ptr to function)
-#define CONFIG_CS_GPIO 4
+#define CONFIG_CS_GPIO 5
 #define CONFIG_SCK_GPIO 18
 #define CONFIG_MOSI_GPIO 23
 #define CONFIG_MISO_GPIO 19
-#define CONFIG_RST_GPIO 2
+#define CONFIG_RST_GPIO 4
+#define CONFIG_D0_LORA 2
 
 void lora_write_reg(int16_t reg, int16_t val) {
   uint8_t out[2] = {0x80 | reg, val};
@@ -159,7 +160,7 @@ void lora_disable_crc(void) {
   lora_write_reg(REG_MODEM_CONFIG_2, lora_read_reg(REG_MODEM_CONFIG_2) & 0xfb);
 }
 
-int16_t lora_init(void) {
+esp_err_t lora_init(void) {
   esp_err_t ret;
 
   /*
@@ -218,7 +219,7 @@ int16_t lora_init(void) {
   lora_set_tx_power(17);
 
   lora_idle();
-  return 1;
+  return ESP_OK;
 }
 
 void lora_send_packet(uint8_t *buf, int16_t size) {

@@ -184,7 +184,7 @@ void lora_disable_crc(void);
 /*!
  * \brief Perform hardware initialization.
  */
-int16_t lora_init(void);
+esp_err_t lora_init(void);
 
 /*!
  * \brief Send a packet.
