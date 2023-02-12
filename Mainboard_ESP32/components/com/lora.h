@@ -221,7 +221,7 @@ float lora_packet_snr(void);
  */
 void lora_close(void);
 
-/// Not supported
+/// \brief Not supported
 int16_t lora_initialized(void);
 
 void lora_dump_registers(void);

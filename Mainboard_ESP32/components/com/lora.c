@@ -6,11 +6,12 @@ static spi_device_handle_t __spi;
 static int16_t __implicit;
 static int32_t __frequency;
 
-#define CONFIG_CS_GPIO 1
-#define CONFIG_SCK_GPIO 2
-#define CONFIG_MOSI_GPIO 3
-#define CONFIG_MISO_GPIO 4
-#define CONFIG_RST_GPIO 5
+// TODO(Glibus): change this to be initiated in function (ptr to function)
+#define CONFIG_CS_GPIO 4
+#define CONFIG_SCK_GPIO 18
+#define CONFIG_MOSI_GPIO 23
+#define CONFIG_MISO_GPIO 19
+#define CONFIG_RST_GPIO 2
 
 void lora_write_reg(int16_t reg, int16_t val) {
   uint8_t out[2] = {0x80 | reg, val};
