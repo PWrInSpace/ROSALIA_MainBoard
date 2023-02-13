@@ -2,8 +2,10 @@
 
 #include "driver/uart.h"
 
+// TODO(Glibus): add documentation when final version is written
+
 void uart_init(void);
 
-void uart_transmit(char* msg);
+void uart_transmit(const char* msg);
 
 void uart_receive(char* buf);
