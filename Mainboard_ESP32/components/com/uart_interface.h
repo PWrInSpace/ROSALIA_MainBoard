@@ -5,8 +5,8 @@
 
 // TODO(Glibus): add documentation when final version is written
 
-void uart_init(void);
+void uart_interface_init(void);
 
-void uart_transmit(const char* msg);
- 
+void uart_transmit(char* msg);
+
 bool uart_receive(char* buf);
