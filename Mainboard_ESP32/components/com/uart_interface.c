@@ -3,7 +3,8 @@
 #include "uart_interface.h"
 
 // TODO(Glibus): change this to some kind of struct
-static uart_port_t uart_num = UART_NUM_2 static QueueHandle_t uart_queue;
+static uart_port_t uart_num = UART_NUM_2;
+static QueueHandle_t uart_queue;
 
 void uart_init(void) {
   uart_config_t uart_config = {
@@ -32,4 +33,10 @@ void uart_transmit(const char* msg) {
   uart_write_bytes(uart_num, msg, strlen(msg));
 }
 
-// void uart_receive(char* buf)
+bool uart_receive(char* buf) {
+//   uint8_t data[128];
+  size_t length = 0;
+  ESP_ERROR_CHECK(uart_get_buffered_data_len(uart_num, &length));
+  length = uart_read_bytes(uart_num, buf, length, 100);
+  return length > 0;
+}
