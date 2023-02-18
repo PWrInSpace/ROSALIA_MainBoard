@@ -11,6 +11,7 @@
 #include "freertos/task.h"
 #include "rom/gpio.h"
 #include "soc/gpio_struct.h"
+#include "esp_log.h"
 
 /*
  * IRQ masks

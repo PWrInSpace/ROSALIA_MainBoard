@@ -7,12 +7,12 @@ static int16_t __implicit;
 static int32_t __frequency;
 
 // TODO(Glibus): change this to be initiated in function (ptr to function)
-#define CONFIG_CS_GPIO 4
-#define CONFIG_SCK_GPIO 18
-#define CONFIG_MOSI_GPIO 23
-#define CONFIG_MISO_GPIO 19
-#define CONFIG_RST_GPIO 2
-
+#define CONFIG_CS_GPIO GPIO_NUM_5
+#define CONFIG_SCK_GPIO GPIO_NUM_18
+#define CONFIG_MOSI_GPIO GPIO_NUM_23
+#define CONFIG_MISO_GPIO GPIO_NUM_19
+#define CONFIG_RST_GPIO GPIO_NUM_4
+#define TAG "LORA"
 void lora_write_reg(int16_t reg, int16_t val) {
   uint8_t out[2] = {0x80 | reg, val};
   uint8_t in[2];
@@ -236,7 +236,12 @@ void lora_send_packet(uint8_t *buf, int16_t size) {
    * Start transmission and wait for conclusion.
    */
   lora_write_reg(REG_OP_MODE, MODE_LONG_RANGE_MODE | MODE_TX);
-  while ((lora_read_reg(REG_IRQ_FLAGS) & IRQ_TX_DONE_MASK) == 0) vTaskDelay(2);
+  // TODO(GLIBUS): TUTAJ NAJPEWNIEJ SIE WYWALA
+  while ((lora_read_reg(REG_IRQ_FLAGS) & IRQ_TX_DONE_MASK) == 0x00) {
+    int8_t read_reg = lora_read_reg(REG_IRQ_FLAGS);
+    ESP_LOGI(TAG, "SEND FREEZES, reg: %04x", read_reg);
+    vTaskDelay(2);
+  }
 
   lora_write_reg(REG_IRQ_FLAGS, IRQ_TX_DONE_MASK);
 }
