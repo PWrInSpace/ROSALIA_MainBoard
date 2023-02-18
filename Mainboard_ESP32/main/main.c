@@ -16,9 +16,10 @@
 
 void task_tx(void *p) {
   for (;;) {
-    vTaskDelay(pdMS_TO_TICKS(5000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
+    ESP_LOGI(TAG, "sending packet...\n");
     lora_send_packet((uint8_t *)"Hello", 5);
-    printf("packet sent...\n");
+    ESP_LOGI(TAG, "packet sent...\n");
   }
 }
 
@@ -49,6 +50,5 @@ void app_main(void) {
                                             ESP_LINE_ENDINGS_CR);
   esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM,
                                             ESP_LINE_ENDINGS_CRLF);
-  char chars[10] = "HELLO!";
   xTaskCreate(&task_tx, "task_tx", 2048, NULL, 5, NULL);
 }

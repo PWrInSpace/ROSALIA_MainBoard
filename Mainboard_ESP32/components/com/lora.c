@@ -221,6 +221,7 @@ int16_t lora_init(void) {
   return 1;
 }
 
+// TODO(GLIBUS): Add a method with no delay
 void lora_send_packet(uint8_t *buf, int16_t size) {
   /*
    * Transfer data to radio.
@@ -228,18 +229,19 @@ void lora_send_packet(uint8_t *buf, int16_t size) {
   lora_idle();
   lora_write_reg(REG_FIFO_ADDR_PTR, 0);
 
-  for (int16_t i = 0; i < size; i++) lora_write_reg(REG_FIFO, *buf++);
-
+  for (int16_t i = 0; i < size; i++) {
+    lora_write_reg(REG_FIFO, *buf++);
+  }
   lora_write_reg(REG_PAYLOAD_LENGTH, size);
 
   /*
    * Start transmission and wait for conclusion.
    */
   lora_write_reg(REG_OP_MODE, MODE_LONG_RANGE_MODE | MODE_TX);
-  // TODO(GLIBUS): TUTAJ NAJPEWNIEJ SIE WYWALA
+
   while ((lora_read_reg(REG_IRQ_FLAGS) & IRQ_TX_DONE_MASK) == 0x00) {
-    int8_t read_reg = lora_read_reg(REG_IRQ_FLAGS);
-    ESP_LOGI(TAG, "SEND FREEZES, reg: %04x", read_reg);
+    // int8_t read_reg = lora_read_reg(REG_IRQ_FLAGS);
+    // ESP_LOGI(TAG, "SEND FREEZES, reg: %04x", read_reg);
     vTaskDelay(2);
   }
 
@@ -260,18 +262,23 @@ int16_t lora_receive_packet(uint8_t *buf, int16_t size) {
   /*
    * Find packet size.
    */
-  if (__implicit)
+  if (__implicit) {
     len = lora_read_reg(REG_PAYLOAD_LENGTH);
-  else
+  } else {
     len = lora_read_reg(REG_RX_NB_BYTES);
+  }
 
   /*
    * Transfer data from radio.
    */
   lora_idle();
   lora_write_reg(REG_FIFO_ADDR_PTR, lora_read_reg(REG_FIFO_RX_CURRENT_ADDR));
-  if (len > size) len = size;
-  for (int16_t i = 0; i < len; i++) *buf++ = lora_read_reg(REG_FIFO);
+  if (len > size) {
+    len = size;
+  }
+  for (int16_t i = 0; i < len; i++) {
+    *buf++ = lora_read_reg(REG_FIFO);
+  }
 
   return len;
 }
