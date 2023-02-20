@@ -15,10 +15,15 @@
 #define TAG "MAIN"
 
 void task_tx(void *p) {
+  char buf[32];
+  size_t len = 0;
+  ssize_t lineSize = 0;
   for (;;) {
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    ESP_LOGI(TAG, "sending packet...\n");
-    lora_send_packet((uint8_t *)"Hello", 5);
+    fgets(buf, 32, stdin);
+    // strncat(buf, '\n', 1);
+    // vTaskDelay(pdMS_TO_TICKS(1000));
+    ESP_LOGI(TAG, "sending packet: %s\n", buf);
+    lora_send_packet((uint8_t *)buf, strlen(buf));
     ESP_LOGI(TAG, "packet sent...\n");
   }
 }
