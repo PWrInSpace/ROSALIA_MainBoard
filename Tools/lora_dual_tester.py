@@ -15,9 +15,10 @@ def show_serial_ports() -> list:
     ports = serial.tools.list_ports.comports()
     prt = []
     for i, (port, desc, hwid) in enumerate(sorted(ports)):
-        print("Number {}: {} {} [{}]".format(i ,port, desc, hwid))
+        print("Number {}: {} {} [{}]".format(i, port, desc, hwid))
         prt.append(port)
     return prt
+
 
 available_ports = show_serial_ports()
 # print(available_ports)
@@ -41,22 +42,22 @@ while sender_serial.is_open and receiver_serial.is_open and time.time() - while_
     sender_serial.write(send_buf)
     log.info('Writing %s', send_buf)
     time.sleep(1.)
-    try: 
+    try:
         receive_buf = receiver_serial.readline()
         if receive_buf == send_buf:
             log.info('Good frame received: %s', receive_buf)
-            good_frames+=1
+            good_frames += 1
         else:
             log.info('Bad frame received %s:', receive_buf)
-            bad_frames+=1
+            bad_frames += 1
     except:
         log.info('Frame not received')
-    i+=1
+    i += 1
 
-print('\n Total number of sent frames: %d' %  i)
+print('\n Total number of sent frames: %d' % i)
 good_frames_perc = float(good_frames / i)
-print('Good frames: %d = %.2f %% of total frames' % (good_frames, good_frames_perc * 100.))
+print('Good frames: %d = %.2f %% of total frames' %
+      (good_frames, good_frames_perc * 100.))
 bad_frames_perc = float(bad_frames / i)
-print('Bad frames: %d = %.2f %% of total frames' % (bad_frames, bad_frames_perc* 100.))
-    
-
+print('Bad frames: %d = %.2f %% of total frames' %
+      (bad_frames, bad_frames_perc * 100.))

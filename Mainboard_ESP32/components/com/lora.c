@@ -13,16 +13,18 @@ static int32_t __frequency;
 #define CONFIG_MISO_GPIO GPIO_NUM_19
 #define CONFIG_RST_GPIO GPIO_NUM_4
 #define TAG "LORA"
-void lora_write_reg(int16_t reg, int16_t val) {
+void lora_write_reg(lora_struct_t *lora, int16_t reg, int16_t val) {
   uint8_t out[2] = {0x80 | reg, val};
   uint8_t in[2];
 
-  spi_transaction_t t = {
-      .flags = 0, .length = 8 * sizeof(out), .tx_buffer = out, .rx_buffer = in};
+  lora->spi_transmit(in, out);
+  // spi_transaction_t t = {
+  //     .flags = 0, .length = 8 * sizeof(out), .tx_buffer = out, .rx_buffer = in};
 
-  gpio_set_level(CONFIG_CS_GPIO, 0);
-  spi_device_transmit(__spi, &t);
-  gpio_set_level(CONFIG_CS_GPIO, 1);
+  // gpio_set_level(CONFIG_CS_GPIO, 0);
+  // spi_device_transmit(__spi, &t);
+  // gpio_set_level(CONFIG_CS_GPIO, 1);
+  
 }
 
 int16_t lora_read_reg(int16_t reg) {

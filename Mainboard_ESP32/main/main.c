@@ -14,6 +14,7 @@
 
 #define TAG "MAIN"
 
+//TODO(Glibong): Save this as a task called by CLI
 void task_tx(void *p) {
   char buf[32];
   size_t len = 0;

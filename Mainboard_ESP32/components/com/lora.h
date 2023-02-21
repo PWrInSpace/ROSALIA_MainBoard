@@ -71,21 +71,30 @@
  */
 #define PA_BOOST 0x80
 
+/*!
+  \brief Lora functions return values enum
+*/
+typedef enum{
+  LORA_OK = 0,
+  LORA_INIT_ERR,
+  LORA_TRANSMIT_ERR,
+  LORA_RECEIVE_ERR
+} lora_err_t;
+
+typedef bool (*lora_SPI_transmit)(uint8_t in[2], uint8_t val[2]);
+
 typedef struct {
-  gpio_num_t cs;
-  gpio_num_t miso;
-  gpio_num_t mosi;
-  gpio_num_t sck;
-  gpio_num_t rst;
-  gpio_num_t intr;
-} lora_gpio_struct_t;
+  spi_device_handle_t *lora_spi;
+  lora_SPI_transmit spi_transmit;
+} lora_struct_t;
+
 
 /*!
  * \brief Write a value to a register.
  * \param reg Register index.
  * \param val Value to write.
  */
-void lora_write_reg(int16_t reg, int16_t val);
+void lora_write_reg(lora_struct_t *lora, int16_t reg, int16_t val);
 
 /*!
  * \brief Read the current value of a register.
