@@ -6,12 +6,12 @@
 
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
+#include "esp_log.h"
 #include "esp_system.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "rom/gpio.h"
 #include "soc/gpio_struct.h"
-#include "esp_log.h"
 
 /*
  * IRQ masks
@@ -74,20 +74,23 @@
 /*!
   \brief Lora functions return values enum
 */
-typedef enum{
+typedef enum {
   LORA_OK = 0,
   LORA_INIT_ERR,
   LORA_TRANSMIT_ERR,
   LORA_RECEIVE_ERR
 } lora_err_t;
 
-typedef bool (*lora_SPI_transmit)(uint8_t in[2], uint8_t val[2]);
+typedef bool (*lora_SPI_transmit)(uint8_t _in[2], uint8_t _val[2]);
+typedef void (*lora_delay)(size_t _ms);
+typedef bool (*lora_GPIO_set_level)(uint8_t _gpio_num, uint32_t _level);
 
 typedef struct {
   spi_device_handle_t *lora_spi;
   lora_SPI_transmit spi_transmit;
+  lora_delay delay;
+  lora_GPIO_set_level gpio_set_level;
 } lora_struct_t;
-
 
 /*!
  * \brief Write a value to a register.
@@ -101,107 +104,107 @@ void lora_write_reg(lora_struct_t *lora, int16_t reg, int16_t val);
  * \param reg Register index.
  * \return Value of the register.
  */
-int16_t lora_read_reg(int16_t reg);
+int16_t lora_read_reg(lora_struct_t *lora, int16_t reg);
 
 /*!
  * \brief Perform physical reset on the Lora chip
  */
-void lora_reset(void);
+void lora_reset(lora_struct_t *lora);
 
 /*!
  * \brief Configure explicit header mode.
  * Packet size will be included in the frame.
  */
-void lora_explicit_header_mode(void);
+void lora_explicit_header_mode(lora_struct_t *lora);
 
 /*!
  * \brief Configure implicit header mode.
  * All packets will have a predefined size.
  * \param size Size of the packets.
  */
-void lora_implicit_header_mode(int16_t size);
+void lora_implicit_header_mode(lora_struct_t *lora, int16_t size);
 
 /*!
  * \brief Sets the radio transceiver in idle mode.
  * \note Must be used to change registers and access the FIFO.
  */
-void lora_idle(void);
+void lora_idle(lora_struct_t *lora);
 
 /*!
  * \brief Sets the radio transceiver in sleep mode.
  * \note Low power consumption and FIFO is lost.
  */
-void lora_sleep(void);
+void lora_sleep(lora_struct_t *lora);
 
 /*!
  * \brief Sets the radio transceiver in receive mode.
  * \note Incoming packets will be received.
  */
-void lora_receive(void);
+void lora_receive(lora_struct_t *lora);
 
 /*!
  * \brief Configure power level for transmission
  * \param level 2-17, from least to most power
  */
-void lora_set_tx_power(int16_t level);
+void lora_set_tx_power(lora_struct_t *lora, int16_t level);
 
 /*!
  * \brief Set carrier frequency.
  * \param frequency Frequency in Hz
  */
-void lora_set_frequency(int32_t frequency);
+void lora_set_frequency(lora_struct_t *lora, int32_t frequency);
 
 /*!
  * \brief Set spreading factor.
  * \param sf 6-12, Spreading factor to use.
  */
-void lora_set_spreading_factor(int16_t sf);
+void lora_set_spreading_factor(lora_struct_t *lora, int16_t sf);
 
 /*!
  * \brief Set bandwidth (bit rate)
  * \param sbw Bandwidth in Hz (up to 500000)
  */
-void lora_set_bandwidth(int32_t sbw);
+void lora_set_bandwidth(lora_struct_t *lora, int32_t sbw);
 
 /*!
  * \brief Set coding rate
  * \param denominator 5-8, Denominator for the coding rate 4/x
  */
-void lora_set_coding_rate(int16_t denominator);
+void lora_set_coding_rate(lora_struct_t *lora, int16_t denominator);
 
 /*!
  * \brief Set the size of preamble.
  * \param length Preamble length in symbols.
  */
-void lora_set_preamble_length(int32_t length);
+void lora_set_preamble_length(lora_struct_t *lora, int32_t length);
 
 /*!
  * \brief Change radio sync word.
  * \param sw New sync word to use.
  */
-void lora_set_sync_word(int16_t sw);
+void lora_set_sync_word(lora_struct_t *lora, int16_t sw);
 
 /*!
  * \brief Enable appending/verifying packet CRC.
  */
-void lora_enable_crc(void);
+void lora_enable_crc(lora_struct_t *lora);
 
 /*!
  * \brief Disable appending/verifying packet CRC.
  */
-void lora_disable_crc(void);
+void lora_disable_crc(lora_struct_t *lora);
 
 /*!
  * \brief Perform hardware initialization.
  */
-int16_t lora_init(void);
+int16_t lora_init(lora_struct_t *lora);
 
 /*!
  * \brief Send a packet.
  * \param buf Data to be sent
  * \param size Size of data.
  */
-void lora_send_packet(uint8_t *buf, int16_t size);
+void lora_send_packet(lora_struct_t *lora, uint8_t *buf, int16_t size);
 
 /*!
  * \brief Read a received packet.
@@ -209,29 +212,29 @@ void lora_send_packet(uint8_t *buf, int16_t size);
  * \param size Available size in buffer (bytes).
  * \return Number of bytes received (zero if no packet available).
  */
-int16_t lora_receive_packet(uint8_t *buf, int16_t size);
+int16_t lora_receive_packet(lora_struct_t *lora, uint8_t *buf, int16_t size);
 
 /*!
  * \returns non-zero if there is data to read (packet received).
  */
-int16_t lora_received(void);
+int16_t lora_received(lora_struct_t *lora);
 
 /*!
  * \returns last packet's RSSI.
  */
-int16_t lora_packet_rssi(void);
+int16_t lora_packet_rssi(lora_struct_t *lora);
 
 /*!
  * \returns last packet's SNR (signal to noise ratio).
  */
-float lora_packet_snr(void);
+float lora_packet_snr(lora_struct_t *lora);
 
 /*!
  * \brief Shutdown hardware.
  */
-void lora_close(void);
+void lora_close(lora_struct_t *lora);
 
 /// \brief Not supported
-int16_t lora_initialized(void);
+int16_t lora_initialized(lora_struct_t *lora);
 
-void lora_dump_registers(void);
+void lora_dump_registers(lora_struct_t *lora);
