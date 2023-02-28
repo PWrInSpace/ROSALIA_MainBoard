@@ -106,9 +106,9 @@ void lora_write_reg(lora_struct_t *lora, int16_t reg, int16_t val);
 /*!
  * \brief Read the current value of a register.
  * \param reg Register index.
- * \return Value of the register.
+ * \returns Value of the register.
  */
-int16_t lora_read_reg(lora_struct_t *lora, int16_t reg);
+uint8_t lora_read_reg(lora_struct_t *lora, int16_t reg);
 
 /*!
  * \brief Perform physical reset on the Lora chip
@@ -144,7 +144,7 @@ void lora_sleep(lora_struct_t *lora);
  * \brief Sets the radio transceiver in receive mode.
  * \note Incoming packets will be received.
  */
-void lora_receive(lora_struct_t *lora);
+void lora_set_receive_mode(lora_struct_t *lora);
 
 /*!
  * \brief Configure power level for transmission
@@ -201,7 +201,7 @@ void lora_disable_crc(lora_struct_t *lora);
 /*!
  * \brief Perform hardware initialization.
  */
-int16_t lora_init(lora_struct_t *lora);
+lora_err_t lora_init(lora_struct_t *lora);
 
 /*!
  * \brief Send a packet.
@@ -214,7 +214,7 @@ void lora_send_packet(lora_struct_t *lora, uint8_t *buf, int16_t size);
  * \brief Read a received packet.
  * \param buf Buffer for the data.
  * \param size Available size in buffer (bytes).
- * \return Number of bytes received (zero if no packet available).
+ * \returns Number of bytes received (zero if no packet available).
  */
 int16_t lora_receive_packet(lora_struct_t *lora, uint8_t *buf, int16_t size);
 

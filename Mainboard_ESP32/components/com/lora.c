@@ -1,6 +1,7 @@
 // Copyright 2023 PWr in Space, Krzysztof Gliwiński
 #include "lora.h"
 
+// TODO(Glibus): add this to the lora_struct_t structure
 static spi_device_handle_t __spi;
 
 static int16_t __implicit;
@@ -28,7 +29,7 @@ void lora_write_reg(lora_struct_t *lora, int16_t reg, int16_t val) {
   // lora->gpio_set_level(CONFIG_CS_GPIO, 1);
 }
 
-int16_t lora_read_reg(lora_struct_t *lora, int16_t reg) {
+uint8_t lora_read_reg(lora_struct_t *lora, int16_t reg) {
   uint8_t out[2] = {reg, 0xff};
   uint8_t in[2];
 
@@ -45,12 +46,14 @@ void lora_reset(lora_struct_t *lora) {
 
 void lora_explicit_header_mode(lora_struct_t *lora) {
   __implicit = 0;
+  // TODO(Glibus): change this 0xfe to a define/enum
   lora_write_reg(lora, REG_MODEM_CONFIG_1,
                  lora_read_reg(lora, REG_MODEM_CONFIG_1) & 0xfe);
 }
 
 void lora_implicit_header_mode(lora_struct_t *lora, int16_t size) {
   __implicit = 1;
+  // TODO(Glibus): change this 0x01 to a define/enum
   lora_write_reg(lora, REG_MODEM_CONFIG_1,
                  lora_read_reg(lora, REG_MODEM_CONFIG_1) | 0x01);
   lora_write_reg(lora, REG_PAYLOAD_LENGTH, size);
@@ -64,7 +67,7 @@ void lora_sleep(lora_struct_t *lora) {
   lora_write_reg(lora, REG_OP_MODE, MODE_LONG_RANGE_MODE | MODE_SLEEP);
 }
 
-void lora_receive(lora_struct_t *lora) {
+void lora_set_receive_mode(lora_struct_t *lora) {
   lora_write_reg(lora, REG_OP_MODE, MODE_LONG_RANGE_MODE | MODE_RX_CONTINUOUS);
 }
 
@@ -94,6 +97,7 @@ void lora_set_spreading_factor(lora_struct_t *lora, int16_t sf) {
     sf = 12;
 
   if (sf == 6) {
+    // TODO(Glibus): change these values to enum/defines
     lora_write_reg(lora, REG_DETECTION_OPTIMIZE, 0xc5);
     lora_write_reg(lora, REG_DETECTION_THRESHOLD, 0x0c);
   } else {
@@ -129,6 +133,7 @@ void lora_set_bandwidth(lora_struct_t *lora, int32_t sbw) {
     bw = 8;
   else
     bw = 9;
+  // TODO(Glibus): change the 0x0f to define/enum
   lora_write_reg(lora, REG_MODEM_CONFIG_1,
                  (lora_read_reg(lora, REG_MODEM_CONFIG_1) & 0x0f) | (bw << 4));
 }
@@ -163,9 +168,7 @@ void lora_disable_crc(lora_struct_t *lora) {
                  lora_read_reg(lora, REG_MODEM_CONFIG_2) & 0xfb);
 }
 
-int16_t lora_init(lora_struct_t *lora) {
-  esp_err_t ret;
-
+lora_err_t lora_init(lora_struct_t *lora) {
   /*
    * Configure CPU hardware to communicate with the radio chip
    */
@@ -175,24 +178,24 @@ int16_t lora_init(lora_struct_t *lora) {
   lora->gpio_set_direction(CONFIG_CS_GPIO, GPIO_MODE_OUTPUT);
 
   // TODO(Glibus): remove this from lib (spi initiation)
-  spi_bus_config_t bus = {.miso_io_num = CONFIG_MISO_GPIO,
-                          .mosi_io_num = CONFIG_MOSI_GPIO,
-                          .sclk_io_num = CONFIG_SCK_GPIO,
-                          .quadwp_io_num = -1,
-                          .quadhd_io_num = -1,
-                          .max_transfer_sz = 0};
+  // spi_bus_config_t bus = {.miso_io_num = CONFIG_MISO_GPIO,
+  //                         .mosi_io_num = CONFIG_MOSI_GPIO,
+  //                         .sclk_io_num = CONFIG_SCK_GPIO,
+  //                         .quadwp_io_num = -1,
+  //                         .quadhd_io_num = -1,
+  //                         .max_transfer_sz = 0};
 
-  ret = spi_bus_initialize(VSPI_HOST, &bus, 0);
-  assert(ret == ESP_OK);
+  // ret = spi_bus_initialize(VSPI_HOST, &bus, 0);
+  // assert(ret == ESP_OK);
 
-  spi_device_interface_config_t dev = {.clock_speed_hz = 9000000,
-                                       .mode = 0,
-                                       .spics_io_num = -1,
-                                       .queue_size = 1,
-                                       .flags = 0,
-                                       .pre_cb = NULL};
-  ret = spi_bus_add_device(VSPI_HOST, &dev, &__spi);
-  assert(ret == ESP_OK);
+  // spi_device_interface_config_t dev = {.clock_speed_hz = 9000000,
+  //                                      .mode = 0,
+  //                                      .spics_io_num = -1,
+  //                                      .queue_size = 1,
+  //                                      .flags = 0,
+  //                                      .pre_cb = NULL};
+  // ret = spi_bus_add_device(VSPI_HOST, &dev, &__spi);
+  // assert(ret == ESP_OK);
 
   /*
    * Perform hardware reset.
@@ -212,6 +215,7 @@ int16_t lora_init(lora_struct_t *lora) {
   assert(i <= TIMEOUT_RESET + 1);  // at the end of the loop above, the max
                                    // value i can reach is TIMEOUT_RESET + 1
 
+  // TODO(Glibus): create a lora_default_conifiguration function
   /*
    * Default configuration.
    */
@@ -223,10 +227,11 @@ int16_t lora_init(lora_struct_t *lora) {
   lora_set_tx_power(lora, 17);
 
   lora_idle(lora);
-  return 1;
+  return LORA_OK;
 }
 
-// TODO(GLIBUS): Add a method with no delay
+// TODO(GLIBUS): Add a method with no delay, also add a breakout from while
+// after some time
 void lora_send_packet(lora_struct_t *lora, uint8_t *buf, int16_t size) {
   /*
    * Transfer data to radio.
@@ -283,7 +288,7 @@ int16_t lora_receive_packet(lora_struct_t *lora, uint8_t *buf, int16_t size) {
     len = size;
   }
   for (int16_t i = 0; i < len; i++) {
-    *buf++ = lora_read_reg(lora, REG_FIFO);
+    buf[i] = lora_read_reg(lora, REG_FIFO);
   }
 
   return len;
@@ -299,6 +304,7 @@ int16_t lora_packet_rssi(lora_struct_t *lora) {
           (__frequency < 868E6 ? 164 : 157));
 }
 
+// TODO(Glibus): check if this calculates properly
 float lora_packet_snr(lora_struct_t *lora) {
   return ((int8_t)lora_read_reg(lora, REG_PKT_SNR_VALUE)) * 0.25;
 }
