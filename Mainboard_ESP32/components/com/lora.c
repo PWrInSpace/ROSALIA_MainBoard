@@ -23,29 +23,24 @@ void lora_write_reg(lora_struct_t *lora, int16_t reg, int16_t val) {
   //     .flags = 0, .length = 8 * sizeof(out), .tx_buffer = out, .rx_buffer =
   //     in};
 
-  // gpio_set_level(CONFIG_CS_GPIO, 0);
+  // lora->gpio_set_level(CONFIG_CS_GPIO, 0);
   // spi_device_transmit(__spi, &t);
-  // gpio_set_level(CONFIG_CS_GPIO, 1);
+  // lora->gpio_set_level(CONFIG_CS_GPIO, 1);
 }
 
 int16_t lora_read_reg(lora_struct_t *lora, int16_t reg) {
   uint8_t out[2] = {reg, 0xff};
   uint8_t in[2];
 
-  spi_transaction_t t = {
-      .flags = 0, .length = 8 * sizeof(out), .tx_buffer = out, .rx_buffer = in};
-
-  gpio_set_level(CONFIG_CS_GPIO, 0);
-  spi_device_transmit(__spi, &t);
-  gpio_set_level(CONFIG_CS_GPIO, 1);
+  lora->spi_transmit(in, out);
   return in[1];
 }
 
 void lora_reset(lora_struct_t *lora) {
-  gpio_set_level(CONFIG_RST_GPIO, 0);
-  vTaskDelay(pdMS_TO_TICKS(1));
-  gpio_set_level(CONFIG_RST_GPIO, 1);
-  vTaskDelay(pdMS_TO_TICKS(10));
+  lora->gpio_set_level(CONFIG_RST_GPIO, 0);
+  lora->delay(pdMS_TO_TICKS(1));
+  lora->gpio_set_level(CONFIG_RST_GPIO, 1);
+  lora->delay(pdMS_TO_TICKS(10));
 }
 
 void lora_explicit_header_mode(lora_struct_t *lora) {
@@ -174,11 +169,12 @@ int16_t lora_init(lora_struct_t *lora) {
   /*
    * Configure CPU hardware to communicate with the radio chip
    */
-  gpio_pad_select_gpio(CONFIG_RST_GPIO);
-  gpio_set_direction(CONFIG_RST_GPIO, GPIO_MODE_OUTPUT);
-  gpio_pad_select_gpio(CONFIG_CS_GPIO);
-  gpio_set_direction(CONFIG_CS_GPIO, GPIO_MODE_OUTPUT);
+  lora->gpio_pad_select(CONFIG_RST_GPIO);
+  lora->gpio_set_direction(CONFIG_RST_GPIO, GPIO_MODE_OUTPUT);
+  lora->gpio_pad_select(CONFIG_CS_GPIO);
+  lora->gpio_set_direction(CONFIG_CS_GPIO, GPIO_MODE_OUTPUT);
 
+  // TODO(Glibus): remove this from lib (spi initiation)
   spi_bus_config_t bus = {.miso_io_num = CONFIG_MISO_GPIO,
                           .mosi_io_num = CONFIG_MOSI_GPIO,
                           .sclk_io_num = CONFIG_SCK_GPIO,
@@ -211,7 +207,7 @@ int16_t lora_init(lora_struct_t *lora) {
   while (i++ < TIMEOUT_RESET) {
     version = lora_read_reg(lora, REG_VERSION);
     if (version == 0x12) break;
-    vTaskDelay(2);
+    lora->delay(2);
   }
   assert(i <= TIMEOUT_RESET + 1);  // at the end of the loop above, the max
                                    // value i can reach is TIMEOUT_RESET + 1
@@ -251,7 +247,7 @@ void lora_send_packet(lora_struct_t *lora, uint8_t *buf, int16_t size) {
   while ((lora_read_reg(lora, REG_IRQ_FLAGS) & IRQ_TX_DONE_MASK) == 0x00) {
     // int8_t read_reg = lora_read_reg(lora,REG_IRQ_FLAGS);
     // ESP_LOGI(TAG, "SEND FREEZES, reg: %04x", read_reg);
-    vTaskDelay(2);
+    lora->delay(2);
   }
 
   lora_write_reg(lora, REG_IRQ_FLAGS, IRQ_TX_DONE_MASK);

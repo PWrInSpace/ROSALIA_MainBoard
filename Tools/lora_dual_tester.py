@@ -1,5 +1,5 @@
 import serial
-import pandas as pd
+# import pandas as pd
 import serial.tools.list_ports
 import time
 from datetime import datetime

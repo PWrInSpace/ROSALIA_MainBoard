@@ -84,12 +84,16 @@ typedef enum {
 typedef bool (*lora_SPI_transmit)(uint8_t _in[2], uint8_t _val[2]);
 typedef void (*lora_delay)(size_t _ms);
 typedef bool (*lora_GPIO_set_level)(uint8_t _gpio_num, uint32_t _level);
+typedef void (*lora_GPIO_pad_select_gpio)(uint8_t _gpio_num);
+typedef bool (*lora_GPIO_set_direction)(uint8_t _gpio_num, uint8_t _direction);
 
 typedef struct {
   spi_device_handle_t *lora_spi;
   lora_SPI_transmit spi_transmit;
   lora_delay delay;
   lora_GPIO_set_level gpio_set_level;
+  lora_GPIO_pad_select_gpio gpio_pad_select;
+  lora_GPIO_set_direction gpio_set_direction;
 } lora_struct_t;
 
 /*!
