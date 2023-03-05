@@ -15,18 +15,73 @@ static int32_t __frequency;
 #define CONFIG_RST_GPIO GPIO_NUM_4
 #define TAG "LORA"
 
+lora_err_t lora_init(lora_struct_t *lora) {
+  /*
+   * Configure CPU hardware to communicate with the radio chip
+   */
+  lora->gpio_pad_select(CONFIG_RST_GPIO);
+  lora->gpio_set_direction(CONFIG_RST_GPIO, GPIO_MODE_OUTPUT);
+  lora->gpio_pad_select(CONFIG_CS_GPIO);
+  lora->gpio_set_direction(CONFIG_CS_GPIO, GPIO_MODE_OUTPUT);
+
+  // TODO(Glibus): remove this from lib (spi initiation)
+  // spi_bus_config_t bus = {.miso_io_num = CONFIG_MISO_GPIO,
+  //                         .mosi_io_num = CONFIG_MOSI_GPIO,
+  //                         .sclk_io_num = CONFIG_SCK_GPIO,
+  //                         .quadwp_io_num = -1,
+  //                         .quadhd_io_num = -1,
+  //                         .max_transfer_sz = 0};
+
+  // ret = spi_bus_initialize(VSPI_HOST, &bus, 0);
+  // assert(ret == ESP_OK);
+
+  // spi_device_interface_config_t dev = {.clock_speed_hz = 9000000,
+  //                                      .mode = 0,
+  //                                      .spics_io_num = -1,
+  //                                      .queue_size = 1,
+  //                                      .flags = 0,
+  //                                      .pre_cb = NULL};
+  // ret = spi_bus_add_device(VSPI_HOST, &dev, &__spi);
+  // assert(ret == ESP_OK);
+
+  /*
+   * Perform hardware reset.
+   */
+  lora_reset(lora);
+
+  /*
+   * Check version.
+   */
+  uint8_t version;
+  uint8_t i = 0;
+  while (i++ < TIMEOUT_RESET) {
+    version = lora_read_reg(lora, REG_VERSION);
+    if (version == 0x12) break;
+    lora->delay(2);
+  }
+  assert(i <= TIMEOUT_RESET + 1);  // at the end of the loop above, the max
+                                   // value i can reach is TIMEOUT_RESET + 1
+
+  // TODO(Glibus): create a lora_default_conifiguration function
+  /*
+   * Default configuration.
+   */
+  lora_sleep(lora);
+  lora_write_reg(lora, REG_FIFO_RX_BASE_ADDR, 0);
+  lora_write_reg(lora, REG_FIFO_TX_BASE_ADDR, 0);
+  lora_write_reg(lora, REG_LNA, lora_read_reg(lora, REG_LNA) | 0x03);
+  lora_write_reg(lora, REG_MODEM_CONFIG_3, 0x04);
+  lora_set_tx_power(lora, 17);
+
+  lora_idle(lora);
+  return LORA_OK;
+}
+
 void lora_write_reg(lora_struct_t *lora, int16_t reg, int16_t val) {
   uint8_t out[2] = {0x80 | reg, val};
   uint8_t in[2];
 
   lora->spi_transmit(in, out);
-  // spi_transaction_t t = {
-  //     .flags = 0, .length = 8 * sizeof(out), .tx_buffer = out, .rx_buffer =
-  //     in};
-
-  // lora->gpio_set_level(CONFIG_CS_GPIO, 0);
-  // spi_device_transmit(__spi, &t);
-  // lora->gpio_set_level(CONFIG_CS_GPIO, 1);
 }
 
 uint8_t lora_read_reg(lora_struct_t *lora, int16_t reg) {
@@ -166,68 +221,6 @@ void lora_enable_crc(lora_struct_t *lora) {
 void lora_disable_crc(lora_struct_t *lora) {
   lora_write_reg(lora, REG_MODEM_CONFIG_2,
                  lora_read_reg(lora, REG_MODEM_CONFIG_2) & 0xfb);
-}
-
-lora_err_t lora_init(lora_struct_t *lora) {
-  /*
-   * Configure CPU hardware to communicate with the radio chip
-   */
-  lora->gpio_pad_select(CONFIG_RST_GPIO);
-  lora->gpio_set_direction(CONFIG_RST_GPIO, GPIO_MODE_OUTPUT);
-  lora->gpio_pad_select(CONFIG_CS_GPIO);
-  lora->gpio_set_direction(CONFIG_CS_GPIO, GPIO_MODE_OUTPUT);
-
-  // TODO(Glibus): remove this from lib (spi initiation)
-  // spi_bus_config_t bus = {.miso_io_num = CONFIG_MISO_GPIO,
-  //                         .mosi_io_num = CONFIG_MOSI_GPIO,
-  //                         .sclk_io_num = CONFIG_SCK_GPIO,
-  //                         .quadwp_io_num = -1,
-  //                         .quadhd_io_num = -1,
-  //                         .max_transfer_sz = 0};
-
-  // ret = spi_bus_initialize(VSPI_HOST, &bus, 0);
-  // assert(ret == ESP_OK);
-
-  // spi_device_interface_config_t dev = {.clock_speed_hz = 9000000,
-  //                                      .mode = 0,
-  //                                      .spics_io_num = -1,
-  //                                      .queue_size = 1,
-  //                                      .flags = 0,
-  //                                      .pre_cb = NULL};
-  // ret = spi_bus_add_device(VSPI_HOST, &dev, &__spi);
-  // assert(ret == ESP_OK);
-
-  /*
-   * Perform hardware reset.
-   */
-  lora_reset(lora);
-
-  /*
-   * Check version.
-   */
-  uint8_t version;
-  uint8_t i = 0;
-  while (i++ < TIMEOUT_RESET) {
-    version = lora_read_reg(lora, REG_VERSION);
-    if (version == 0x12) break;
-    lora->delay(2);
-  }
-  assert(i <= TIMEOUT_RESET + 1);  // at the end of the loop above, the max
-                                   // value i can reach is TIMEOUT_RESET + 1
-
-  // TODO(Glibus): create a lora_default_conifiguration function
-  /*
-   * Default configuration.
-   */
-  lora_sleep(lora);
-  lora_write_reg(lora, REG_FIFO_RX_BASE_ADDR, 0);
-  lora_write_reg(lora, REG_FIFO_TX_BASE_ADDR, 0);
-  lora_write_reg(lora, REG_LNA, lora_read_reg(lora, REG_LNA) | 0x03);
-  lora_write_reg(lora, REG_MODEM_CONFIG_3, 0x04);
-  lora_set_tx_power(lora, 17);
-
-  lora_idle(lora);
-  return LORA_OK;
 }
 
 // TODO(GLIBUS): Add a method with no delay, also add a breakout from while

@@ -81,11 +81,16 @@ typedef enum {
   LORA_RECEIVE_ERR
 } lora_err_t;
 
+typedef enum{
+  LORA_GPIO_MODE_OUTPUT = 0,
+  LORA_GPIO_MODE_INPUT
+} lora_gpio_mode_t;
+
 typedef bool (*lora_SPI_transmit)(uint8_t _in[2], uint8_t _val[2]);
 typedef void (*lora_delay)(size_t _ms);
 typedef bool (*lora_GPIO_set_level)(uint8_t _gpio_num, uint32_t _level);
 typedef void (*lora_GPIO_pad_select_gpio)(uint8_t _gpio_num);
-typedef bool (*lora_GPIO_set_direction)(uint8_t _gpio_num, uint8_t _direction);
+typedef bool (*lora_GPIO_set_direction)(uint8_t _gpio_num, lora_gpio_mode_t _direction);
 
 typedef struct {
   spi_device_handle_t *lora_spi;
@@ -95,6 +100,11 @@ typedef struct {
   lora_GPIO_pad_select_gpio gpio_pad_select;
   lora_GPIO_set_direction gpio_set_direction;
 } lora_struct_t;
+
+/*!
+ * \brief Perform hardware initialization.
+ */
+lora_err_t lora_init(lora_struct_t *lora);
 
 /*!
  * \brief Write a value to a register.
@@ -199,11 +209,6 @@ void lora_enable_crc(lora_struct_t *lora);
 void lora_disable_crc(lora_struct_t *lora);
 
 /*!
- * \brief Perform hardware initialization.
- */
-lora_err_t lora_init(lora_struct_t *lora);
-
-/*!
  * \brief Send a packet.
  * \param buf Data to be sent
  * \param size Size of data.
@@ -241,4 +246,6 @@ void lora_close(lora_struct_t *lora);
 /// \brief Not supported
 int16_t lora_initialized(lora_struct_t *lora);
 
+/// \brief Dump registers :D
+// TODO(Glibus): rather than printf the output save it to some kind of struct
 void lora_dump_registers(lora_struct_t *lora);
