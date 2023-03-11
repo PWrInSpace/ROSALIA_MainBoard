@@ -83,8 +83,9 @@ typedef enum {
 } lora_err_t;
 
 typedef enum {
-  LORA_GPIO_MODE_OUTPUT = 0,
-  LORA_GPIO_MODE_INPUT
+  LORA_GPIO_MODE_DISABLE = 0,
+  LORA_GPIO_MODE_INPUT,
+  LORA_GPIO_MODE_OUTPUT
 } lora_gpio_mode_t;
 
 typedef bool (*lora_SPI_transmit)(uint8_t _in[2], uint8_t _val[2]);
@@ -92,7 +93,8 @@ typedef void (*lora_delay)(size_t _ms);
 typedef bool (*lora_GPIO_set_level)(uint8_t _gpio_num, uint32_t _level);
 typedef void (*lora_GPIO_pad_select_gpio)(uint8_t _gpio_num);
 typedef bool (*lora_GPIO_set_direction)(uint8_t _gpio_num,
-                                        bool _direction);
+                                        lora_gpio_mode_t _direction);
+typedef void (*lora_log)(const char *info);
 
 typedef struct {
   lora_SPI_transmit spi_transmit;
@@ -100,9 +102,10 @@ typedef struct {
   lora_GPIO_set_level gpio_set_level;
   lora_GPIO_pad_select_gpio gpio_pad_select;
   lora_GPIO_set_direction gpio_set_direction;
+  lora_log log;
   uint8_t rst_gpio_num;
   uint8_t cs_gpio_num;
-  uint8_t dio_gpio_num;
+  uint8_t d0_gpio_num;
   int16_t implicit;
   int32_t frequency;
 } lora_struct_t;

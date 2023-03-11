@@ -8,7 +8,8 @@ static spi_device_handle_t __spi;
 #define CONFIG_SCK_GPIO GPIO_NUM_18
 #define CONFIG_MOSI_GPIO GPIO_NUM_23
 #define CONFIG_MISO_GPIO GPIO_NUM_19
-#define CONFIG_RST_GPIO GPIO_NUM_4
+
+#define TAG "LORA"
 
 bool _lora_spi_init() {
   esp_err_t ret;
@@ -20,7 +21,7 @@ bool _lora_spi_init() {
                           .max_transfer_sz = 0};
 
   ret = spi_bus_initialize(VSPI_HOST, &bus, 0);
-  assert(ret == ESP_OK);
+  ESP_ERROR_CHECK(ret);
 
   spi_device_interface_config_t dev = {.clock_speed_hz = 9000000,
                                        .mode = 0,
@@ -29,13 +30,13 @@ bool _lora_spi_init() {
                                        .flags = 0,
                                        .pre_cb = NULL};
   ret = spi_bus_add_device(VSPI_HOST, &dev, &__spi);
-  assert(ret == ESP_OK);
+  ESP_ERROR_CHECK(ret);
   return ret == ESP_OK ? true : false;
 }
 
 bool _lora_SPI_transmit(uint8_t _in[2], uint8_t _out[2]) {
   spi_transaction_t t = {.flags = 0,
-                         .length = 8 * sizeof(&_out),
+                         .length = 8 * sizeof(uint8_t) * 2,
                          .tx_buffer = _out,
                          .rx_buffer = _in};
 
@@ -52,11 +53,26 @@ bool _lora_GPIO_set_level(uint8_t _gpio_num, uint32_t _level) {
 }
 
 void _lora_GPIO_pad_select_gpio(uint8_t _gpio_num) {
-  esp_rom_gpio_pad_select_gpio((uint32_t)_gpio_num);
+  gpio_pad_select_gpio((uint32_t)_gpio_num);
 }
 
 bool _lora_GPIO_set_direction(uint8_t _gpio_num, lora_gpio_mode_t _direction) {
-  return gpio_set_direction(_gpio_num, (gpio_mode_t)_direction) == ESP_OK
+  gpio_mode_t dir;
+  if(_direction == LORA_GPIO_MODE_DISABLE){
+    dir = GPIO_MODE_DISABLE;
+  }
+  else if(_direction == LORA_GPIO_MODE_INPUT){
+    dir = GPIO_MODE_INPUT;
+  }
+  else{
+    dir = GPIO_MODE_OUTPUT;
+  }
+  
+  return gpio_set_direction(_gpio_num, dir) == ESP_OK
              ? true
              : false;
+}
+
+void _lora_log(const char* info){
+  ESP_LOGI(TAG, "%s", info);
 }

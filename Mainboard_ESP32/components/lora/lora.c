@@ -9,9 +9,9 @@ lora_err_t lora_init(lora_struct_t *lora) {
    * Configure CPU hardware to communicate with the radio chip
    */
   lora->gpio_pad_select(lora->rst_gpio_num);
-  lora->gpio_set_direction(lora->rst_gpio_num, GPIO_MODE_OUTPUT);
+  lora->gpio_set_direction(lora->rst_gpio_num, LORA_GPIO_MODE_OUTPUT);
   lora->gpio_pad_select(lora->cs_gpio_num);
-  lora->gpio_set_direction(lora->cs_gpio_num, GPIO_MODE_OUTPUT);
+  lora->gpio_set_direction(lora->cs_gpio_num, LORA_GPIO_MODE_OUTPUT);
 
   /*
    * Perform hardware reset.
@@ -66,9 +66,9 @@ uint8_t lora_read_reg(lora_struct_t *lora, int16_t reg) {
 
 void lora_reset(lora_struct_t *lora) {
   lora->gpio_set_level(lora->rst_gpio_num, 0);
-  lora->delay(pdMS_TO_TICKS(1));
+  lora->delay(1);
   lora->gpio_set_level(lora->rst_gpio_num, 1);
-  lora->delay(pdMS_TO_TICKS(10));
+  lora->delay(10);
 }
 
 void lora_explicit_header_mode(lora_struct_t *lora) {
@@ -213,7 +213,7 @@ void lora_send_packet(lora_struct_t *lora, uint8_t *buf, int16_t size) {
 
   while ((lora_read_reg(lora, REG_IRQ_FLAGS) & IRQ_TX_DONE_MASK) == 0x00) {
     // int8_t read_reg = lora_read_reg(lora,REG_IRQ_FLAGS);
-    // ESP_LOGI(TAG, "SEND FREEZES, reg: %04x", read_reg);
+    // lora->log("SEND FREEZES");
     lora->delay(2);
   }
 
