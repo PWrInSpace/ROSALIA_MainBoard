@@ -58,21 +58,15 @@ void _lora_GPIO_pad_select_gpio(uint8_t _gpio_num) {
 
 bool _lora_GPIO_set_direction(uint8_t _gpio_num, lora_gpio_mode_t _direction) {
   gpio_mode_t dir;
-  if(_direction == LORA_GPIO_MODE_DISABLE){
+  if (_direction == LORA_GPIO_MODE_DISABLE) {
     dir = GPIO_MODE_DISABLE;
-  }
-  else if(_direction == LORA_GPIO_MODE_INPUT){
+  } else if (_direction == LORA_GPIO_MODE_INPUT) {
     dir = GPIO_MODE_INPUT;
-  }
-  else{
+  } else {
     dir = GPIO_MODE_OUTPUT;
   }
-  
-  return gpio_set_direction(_gpio_num, dir) == ESP_OK
-             ? true
-             : false;
+
+  return gpio_set_direction(_gpio_num, dir) == ESP_OK ? true : false;
 }
 
-void _lora_log(const char* info){
-  ESP_LOGI(TAG, "%s", info);
-}
+void _lora_log(const char* info) { ESP_LOGI(TAG, "%s", info); }

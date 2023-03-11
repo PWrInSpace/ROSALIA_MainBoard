@@ -15,7 +15,7 @@ bool _lora_spi_init();
 
 bool _lora_SPI_transmit(uint8_t _in[2], uint8_t _out[2]);
 
-inline void _lora_delay(size_t _ms);
+void _lora_delay(size_t _ms);
 
 bool _lora_GPIO_set_level(uint8_t _gpio_num, uint32_t _level);
 

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "config.h"
 #include "driver/uart.h"
 #include "esp_console.h"
 #include "esp_log.h"
@@ -11,23 +12,20 @@
 #include "esp_vfs_fat.h"
 #include "freertos/FreeRTOS.h"
 #include "lora_esp32_config.h"
-#include "config.h"
 
 #define TAG "MAIN"
 
-lora_struct_t lora = {
-  .spi_transmit = _lora_SPI_transmit,
-  .delay = _lora_delay,
-  .gpio_set_level = _lora_GPIO_set_level,
-  .gpio_pad_select = _lora_GPIO_pad_select_gpio,
-  .gpio_set_direction = _lora_GPIO_set_direction,
-  .log = _lora_log,
-  .rst_gpio_num = RS_LORA,
-  .cs_gpio_num = CS_LORA,
-  .d0_gpio_num = D0_LORA,
-  .implicit = 0,
-  .frequency = 0
-};
+lora_struct_t lora = {.spi_transmit = _lora_SPI_transmit,
+                      .delay = _lora_delay,
+                      .gpio_set_level = _lora_GPIO_set_level,
+                      .gpio_pad_select = _lora_GPIO_pad_select_gpio,
+                      .gpio_set_direction = _lora_GPIO_set_direction,
+                      .log = _lora_log,
+                      .rst_gpio_num = RS_LORA,
+                      .cs_gpio_num = CS_LORA,
+                      .d0_gpio_num = D0_LORA,
+                      .implicit = 0,
+                      .frequency = 0};
 
 // TODO(Glibong): Save this as a task called by CLI (when fully finished)
 void task_tx(void *p) {

@@ -28,4 +28,3 @@
 #define LIM1_1 GPIO_NUM_36
 #define LIM1_2 GPIO_NUM_39
 
-/// \brief Limit switches
