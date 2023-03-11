@@ -1,48 +1,17 @@
 // Copyright 2023 PWr in Space, Krzysztof Gliwiński
 #include "lora.h"
 
-// TODO(Glibus): add this to the lora_struct_t structure
-static spi_device_handle_t __spi;
-
-static int16_t __implicit;
-static int32_t __frequency;
-
-// TODO(Glibus): change this to be initiated in function (ptr to function)
-#define CONFIG_CS_GPIO GPIO_NUM_5
-#define CONFIG_SCK_GPIO GPIO_NUM_18
-#define CONFIG_MOSI_GPIO GPIO_NUM_23
-#define CONFIG_MISO_GPIO GPIO_NUM_19
-#define CONFIG_RST_GPIO GPIO_NUM_4
 #define TAG "LORA"
 
 lora_err_t lora_init(lora_struct_t *lora) {
+  lora_err_t ret = LORA_OK;
   /*
    * Configure CPU hardware to communicate with the radio chip
    */
-  lora->gpio_pad_select(CONFIG_RST_GPIO);
-  lora->gpio_set_direction(CONFIG_RST_GPIO, GPIO_MODE_OUTPUT);
-  lora->gpio_pad_select(CONFIG_CS_GPIO);
-  lora->gpio_set_direction(CONFIG_CS_GPIO, GPIO_MODE_OUTPUT);
-
-  // TODO(Glibus): remove this from lib (spi initiation)
-  // spi_bus_config_t bus = {.miso_io_num = CONFIG_MISO_GPIO,
-  //                         .mosi_io_num = CONFIG_MOSI_GPIO,
-  //                         .sclk_io_num = CONFIG_SCK_GPIO,
-  //                         .quadwp_io_num = -1,
-  //                         .quadhd_io_num = -1,
-  //                         .max_transfer_sz = 0};
-
-  // ret = spi_bus_initialize(VSPI_HOST, &bus, 0);
-  // assert(ret == ESP_OK);
-
-  // spi_device_interface_config_t dev = {.clock_speed_hz = 9000000,
-  //                                      .mode = 0,
-  //                                      .spics_io_num = -1,
-  //                                      .queue_size = 1,
-  //                                      .flags = 0,
-  //                                      .pre_cb = NULL};
-  // ret = spi_bus_add_device(VSPI_HOST, &dev, &__spi);
-  // assert(ret == ESP_OK);
+  lora->gpio_pad_select(lora->rst_gpio_num);
+  lora->gpio_set_direction(lora->rst_gpio_num, GPIO_MODE_OUTPUT);
+  lora->gpio_pad_select(lora->cs_gpio_num);
+  lora->gpio_set_direction(lora->cs_gpio_num, GPIO_MODE_OUTPUT);
 
   /*
    * Perform hardware reset.
@@ -62,26 +31,29 @@ lora_err_t lora_init(lora_struct_t *lora) {
   assert(i <= TIMEOUT_RESET + 1);  // at the end of the loop above, the max
                                    // value i can reach is TIMEOUT_RESET + 1
 
-  // TODO(Glibus): create a lora_default_conifiguration function
-  /*
-   * Default configuration.
-   */
+  ret |= lora_default_config(lora);
+
+  return ret;
+}
+
+lora_err_t lora_default_config(lora_struct_t *lora) {
+  lora_err_t ret = LORA_OK;
   lora_sleep(lora);
-  lora_write_reg(lora, REG_FIFO_RX_BASE_ADDR, 0);
-  lora_write_reg(lora, REG_FIFO_TX_BASE_ADDR, 0);
-  lora_write_reg(lora, REG_LNA, lora_read_reg(lora, REG_LNA) | 0x03);
-  lora_write_reg(lora, REG_MODEM_CONFIG_3, 0x04);
+  ret |= lora_write_reg(lora, REG_FIFO_RX_BASE_ADDR, 0);
+  ret |= lora_write_reg(lora, REG_FIFO_TX_BASE_ADDR, 0);
+  ret |= lora_write_reg(lora, REG_LNA, lora_read_reg(lora, REG_LNA) | 0x03);
+  ret |= lora_write_reg(lora, REG_MODEM_CONFIG_3, 0x04);
   lora_set_tx_power(lora, 17);
 
   lora_idle(lora);
-  return LORA_OK;
+  return ret;
 }
 
-void lora_write_reg(lora_struct_t *lora, int16_t reg, int16_t val) {
+lora_err_t lora_write_reg(lora_struct_t *lora, int16_t reg, int16_t val) {
   uint8_t out[2] = {0x80 | reg, val};
   uint8_t in[2];
 
-  lora->spi_transmit(in, out);
+  return lora->spi_transmit(in, out) == 1 ? LORA_OK : LORA_WRITE_ERR;
 }
 
 uint8_t lora_read_reg(lora_struct_t *lora, int16_t reg) {
@@ -93,22 +65,20 @@ uint8_t lora_read_reg(lora_struct_t *lora, int16_t reg) {
 }
 
 void lora_reset(lora_struct_t *lora) {
-  lora->gpio_set_level(CONFIG_RST_GPIO, 0);
+  lora->gpio_set_level(lora->rst_gpio_num, 0);
   lora->delay(pdMS_TO_TICKS(1));
-  lora->gpio_set_level(CONFIG_RST_GPIO, 1);
+  lora->gpio_set_level(lora->rst_gpio_num, 1);
   lora->delay(pdMS_TO_TICKS(10));
 }
 
 void lora_explicit_header_mode(lora_struct_t *lora) {
-  __implicit = 0;
-  // TODO(Glibus): change this 0xfe to a define/enum
+  lora->implicit = 0;
   lora_write_reg(lora, REG_MODEM_CONFIG_1,
                  lora_read_reg(lora, REG_MODEM_CONFIG_1) & 0xfe);
 }
 
 void lora_implicit_header_mode(lora_struct_t *lora, int16_t size) {
-  __implicit = 1;
-  // TODO(Glibus): change this 0x01 to a define/enum
+  lora->implicit = 1;
   lora_write_reg(lora, REG_MODEM_CONFIG_1,
                  lora_read_reg(lora, REG_MODEM_CONFIG_1) | 0x01);
   lora_write_reg(lora, REG_PAYLOAD_LENGTH, size);
@@ -136,7 +106,7 @@ void lora_set_tx_power(lora_struct_t *lora, int16_t level) {
 }
 
 void lora_set_frequency(lora_struct_t *lora, int32_t frequency) {
-  __frequency = frequency;
+  lora->frequency = frequency;
 
   uint64_t frf = ((uint64_t)frequency << 19) / 32000000;
 
@@ -152,7 +122,6 @@ void lora_set_spreading_factor(lora_struct_t *lora, int16_t sf) {
     sf = 12;
 
   if (sf == 6) {
-    // TODO(Glibus): change these values to enum/defines
     lora_write_reg(lora, REG_DETECTION_OPTIMIZE, 0xc5);
     lora_write_reg(lora, REG_DETECTION_THRESHOLD, 0x0c);
   } else {
@@ -188,7 +157,7 @@ void lora_set_bandwidth(lora_struct_t *lora, int32_t sbw) {
     bw = 8;
   else
     bw = 9;
-  // TODO(Glibus): change the 0x0f to define/enum
+
   lora_write_reg(lora, REG_MODEM_CONFIG_1,
                  (lora_read_reg(lora, REG_MODEM_CONFIG_1) & 0x0f) | (bw << 4));
 }
@@ -265,7 +234,7 @@ int16_t lora_receive_packet(lora_struct_t *lora, uint8_t *buf, int16_t size) {
   /*
    * Find packet size.
    */
-  if (__implicit) {
+  if (lora->implicit) {
     len = lora_read_reg(lora, REG_PAYLOAD_LENGTH);
   } else {
     len = lora_read_reg(lora, REG_RX_NB_BYTES);
@@ -294,7 +263,7 @@ int16_t lora_received(lora_struct_t *lora) {
 
 int16_t lora_packet_rssi(lora_struct_t *lora) {
   return (lora_read_reg(lora, REG_PKT_RSSI_VALUE) -
-          (__frequency < 868E6 ? 164 : 157));
+          (lora->frequency < 868E6 ? 164 : 157));
 }
 
 // TODO(Glibus): check if this calculates properly

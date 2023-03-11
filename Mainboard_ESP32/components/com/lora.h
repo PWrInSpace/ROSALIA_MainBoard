@@ -77,11 +77,12 @@
 typedef enum {
   LORA_OK = 0,
   LORA_INIT_ERR,
+  LORA_WRITE_ERR,
   LORA_TRANSMIT_ERR,
   LORA_RECEIVE_ERR
 } lora_err_t;
 
-typedef enum{
+typedef enum {
   LORA_GPIO_MODE_OUTPUT = 0,
   LORA_GPIO_MODE_INPUT
 } lora_gpio_mode_t;
@@ -90,15 +91,20 @@ typedef bool (*lora_SPI_transmit)(uint8_t _in[2], uint8_t _val[2]);
 typedef void (*lora_delay)(size_t _ms);
 typedef bool (*lora_GPIO_set_level)(uint8_t _gpio_num, uint32_t _level);
 typedef void (*lora_GPIO_pad_select_gpio)(uint8_t _gpio_num);
-typedef bool (*lora_GPIO_set_direction)(uint8_t _gpio_num, lora_gpio_mode_t _direction);
+typedef bool (*lora_GPIO_set_direction)(uint8_t _gpio_num,
+                                        bool _direction);
 
 typedef struct {
-  spi_device_handle_t *lora_spi;
   lora_SPI_transmit spi_transmit;
   lora_delay delay;
   lora_GPIO_set_level gpio_set_level;
   lora_GPIO_pad_select_gpio gpio_pad_select;
   lora_GPIO_set_direction gpio_set_direction;
+  uint8_t rst_gpio_num;
+  uint8_t cs_gpio_num;
+  uint8_t dio_gpio_num;
+  int16_t implicit;
+  int32_t frequency;
 } lora_struct_t;
 
 /*!
@@ -107,11 +113,17 @@ typedef struct {
 lora_err_t lora_init(lora_struct_t *lora);
 
 /*!
+ * \brief Create default config and set parameters
+ */
+lora_err_t lora_default_config(lora_struct_t *lora);
+
+/*!
  * \brief Write a value to a register.
  * \param reg Register index.
  * \param val Value to write.
+ * \return lora_err_t value
  */
-void lora_write_reg(lora_struct_t *lora, int16_t reg, int16_t val);
+lora_err_t lora_write_reg(lora_struct_t *lora, int16_t reg, int16_t val);
 
 /*!
  * \brief Read the current value of a register.

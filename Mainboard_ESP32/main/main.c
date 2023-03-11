@@ -22,7 +22,7 @@ void task_tx(void *p) {
   for (;;) {
     fgets(buf, 32, stdin);
     // strncat(buf, '\n', 1);
-    // vTaskDelay(pdMS_TO_TICKS(1000));
+    vTaskDelay(pdMS_TO_TICKS(1000));
     ESP_LOGI(TAG, "sending packet: %s\n", buf);
     // lora_send_packet((uint8_t *)buf, strlen(buf));
     ESP_LOGI(TAG, "packet sent...\n");
