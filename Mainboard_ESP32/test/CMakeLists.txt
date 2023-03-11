@@ -10,20 +10,13 @@ set(EXTRA_COMPONENT_DIRS "../components")
 # - when invoking CMake directly: cmake -D TEST_COMPONENTS="xxxxx" ..
 # - when using idf.py: idf.py -T xxxxx build
 #
-
-
 set(TEST_FILES_DIRS
-    "memory"
-    "sensor"
-    "testable"
-    "sys"
+    "lora"
 )
-
-
 
 set(TEST_COMPONENTS ${TEST_FILES_DIRS} CACHE STRING "List of components to test")
 
 include($ENV{IDF_PATH}/tools/cmake/project.cmake)
-project(brakev2)
+project(ROSALIA_MainBoard)
 
 spiffs_create_partition_image(storage test_spiffs_data FLASH_IN_PROJECT)
