@@ -30,8 +30,8 @@ lora_struct_t lora = {.spi_transmit = _lora_SPI_transmit,
 // TODO(Glibong): Save this as a task called by CLI (when fully finished)
 void task_tx(void *p) {
   char buf[32];
-  size_t len = 0;
-  ssize_t lineSize = 0;
+  // size_t len = 0;
+  // ssize_t lineSize = 0;
   for (;;) {
     fgets(buf, 32, stdin);
     // strncat(buf, '\n', 1);
@@ -39,6 +39,21 @@ void task_tx(void *p) {
     ESP_LOGI(TAG, "sending packet: %s\n", buf);
     lora_send_packet(&lora, (uint8_t *)buf, strlen(buf));
     ESP_LOGI(TAG, "packet sent...\n");
+  }
+}
+
+void task_rx(void *p) {
+  int x;
+  uint8_t buf[32];
+  for (;;) {
+    lora_set_receive_mode(&lora);  // put into receive mode
+    while (lora_received(&lora) == LORA_OK) {
+      x = lora_receive_packet(&lora, buf, sizeof(buf));
+      buf[x] = 0;
+      printf("Received: %s\n", buf);
+      lora_received(&lora);
+    }
+    vTaskDelay(10);
   }
 }
 
@@ -63,5 +78,5 @@ void app_main(void) {
                                             ESP_LINE_ENDINGS_CR);
   esp_vfs_dev_uart_port_set_tx_line_endings(CONFIG_ESP_CONSOLE_UART_NUM,
                                             ESP_LINE_ENDINGS_CRLF);
-  xTaskCreate(&task_tx, "task_tx", 2048, NULL, 5, NULL);
+  xTaskCreate(&task_rx, "task_tx", 2048, NULL, 5, NULL);
 }

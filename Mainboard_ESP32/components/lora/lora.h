@@ -241,7 +241,7 @@ int16_t lora_receive_packet(lora_struct_t *lora, uint8_t *buf, int16_t size);
 /*!
  * \returns non-zero if there is data to read (packet received).
  */
-int16_t lora_received(lora_struct_t *lora);
+lora_err_t lora_received(lora_struct_t *lora);
 
 /*!
  * \returns last packet's RSSI.

@@ -256,9 +256,11 @@ int16_t lora_receive_packet(lora_struct_t *lora, uint8_t *buf, int16_t size) {
   return len;
 }
 
-int16_t lora_received(lora_struct_t *lora) {
-  if (lora_read_reg(lora, REG_IRQ_FLAGS) & IRQ_RX_DONE_MASK) return 1;
-  return 0;
+lora_err_t lora_received(lora_struct_t *lora) {
+  if (lora_read_reg(lora, REG_IRQ_FLAGS) & IRQ_RX_DONE_MASK) {
+    return LORA_OK;
+  }
+  return LORA_RECEIVE_ERR;
 }
 
 int16_t lora_packet_rssi(lora_struct_t *lora) {
